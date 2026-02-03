@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biosketch Text Editor - NIH/NSF</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+
+        /* Toggle Switch */
+        .toggle-section {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9ff;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .toggle-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .toggle-switch {
+            display: inline-flex;
+            background: #e0e0e0;
+            border-radius: 50px;
+            padding: 4px;
+            gap: 4px;
+        }
+
+        .toggle-switch input {
+            display: none;
+        }
+
+        .toggle-label {
+            padding: 10px 25px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .toggle-switch input:checked + .toggle-label {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        /* Info Box */
+        .info-box {
+            display: none;
+            background: #e8f4fd;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-top: 15px;
+            text-align: left;
+        }
+
+        .info-box.active {
+            display: block;
+        }
+
+        .info-box h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .info-box ul {
+            margin-left: 20px;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        /* Section Tabs */
+        .section-tabs {
+            display: none;
+            border-bottom: 2px solid #e0e0e0;
+            margin: 20px 0;
+        }
+
+        .section-tabs.active {
+            display: flex;
+            gap: 10px;
+        }
+
+        .section-tab {
+            padding: 10px 20px;
+            border: none;
+            background: none;
+            color: #666;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            font-weight: 500;
+        }
+
+        .section-tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            font-weight: 600;
+        }
+
+        /* Editor */
+        .editor-wrapper {
+            display: none;
+        }
+
+        .editor-wrapper.active {
+            display: block;
+        }
+
+        .simple-toolbar {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 8px 8px 0 0;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .toolbar-btn {
+            padding: 6px 12px;
+            border: 1px solid #ccc;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .toolbar-btn:hover {
+            background: #e8ebff;
+            border-color: #667eea;
+        }
+
+        .toolbar-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        #editor {
+            width: 100%;
+            min-height: 300px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 0 0 8px 8px;
+            outline: none;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        #editor:focus {
+            outline: 2px solid #667eea;
+            outline-offset: -2px;
+        }
+
+        /* Character Counter */
+        .char-counter {
+            background: #f8f9ff;
+            padding: 10px;
+            border-top: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .char-counter.warning {
+            background: #fff3cd;
+            color: #856404;
+            border-top-color: #ffc107;
+        }
+
+        .char-counter.error {
+            background: #f8d7da;
+            color: #721c24;
+            border-top-color: #dc3545;
+        }
+
+        /* Output */
+        .output-section {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .output-section.active {
+            display: block;
+        }
+
+        .output-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📝 Biosketch Text Editor</h1>
+            <p>Simple formatting for NIH/NSF biosketches</p>
+        </div>
+
+        <div class="card">
+            <!-- Agency Toggle -->
+            <div class="toggle-section">
+                <h3>Select Funding Agency:</h3>
+                <div class="toggle-switch">
+                    <input type="radio" id="nih" name="agency" value="nih" checked>
+                    <label for="nih" class="toggle-label">🏥 NIH</label>
+                    
+                    <input type="radio" id="nsf" name="agency" value="nsf">
+                    <label for="nsf" class="toggle-label">🔬 NSF</label>
+                </div>
+
+                <!-- NIH Info -->
+                <div id="nihInfo" class="info-box active">
+                    <h4>NIH Biographical Sketch Supplement:</h4>
+                    <ul>
+                        <li><strong>Personal Statement:</strong> 3,500 character limit</li>
+                        <li><strong>Contributions to Science:</strong> 5 sections, 2,000 chars each</li>
+                        <li><strong>Formatting:</strong> Basic HTML tags (b, i, u, sup, sub, lists, alignment)</li>
+                        <li><strong>Output:</strong> Clean, minimal HTML ready for SciENcv</li>
+                    </ul>
+                </div>
+
+                <!-- NSF Info -->
+                <div id="nsfInfo" class="info-box">
+                    <h4>NSF Synergistic Activities:</h4>
+                    <ul>
+                        <li><strong>Format:</strong> 1 page, 5 distinct examples</li>
+                        <li><strong>Estimate:</strong> ~3,500 characters for 1 page</li>
+                        <li><strong>Formatting:</strong> Basic HTML tags (b, i, u, sup, sub, lists, alignment)</li>
+                        <li><strong>Output:</strong> Clean, minimal HTML</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- NIH Section Tabs -->
+            <div id="nihTabs" class="section-tabs active">
+                <button class="section-tab active" onclick="switchSection('personal')">Personal Statement</button>
+                <button class="section-tab" onclick="switchSection('contrib1')">Contribution 1</button>
+                <button class="section-tab" onclick="switchSection('contrib2')">Contribution 2</button>
+                <button class="section-tab" onclick="switchSection('contrib3')">Contribution 3</button>
+                <button class="section-tab" onclick="switchSection('contrib4')">Contribution 4</button>
+                <button class="section-tab" onclick="switchSection('contrib5')">Contribution 5</button>
+            </div>
+
+            <!-- NSF Section (single) -->
+            <div id="nsfSection" class="section-tabs">
+                <button class="section-tab active" onclick="switchSection('nsf')">Synergistic Activities</button>
+            </div>
+
+            <!-- Editor -->
+            <div class="editor-wrapper active">
+                <div class="simple-toolbar">
+                    <button class="toolbar-btn" onclick="format('bold')" title="Bold"><b>B</b></button>
+                    <button class="toolbar-btn" onclick="format('italic')" title="Italic"><i>I</i></button>
+                    <button class="toolbar-btn" onclick="format('underline')" title="Underline"><u>U</u></button>
+                    <span style="border-left: 1px solid #ddd; margin: 0 5px;"></span>
+                    <button class="toolbar-btn" onclick="format('superscript')" title="Superscript">x²</button>
+                    <button class="toolbar-btn" onclick="format('subscript')" title="Subscript">x₂</button>
+                    <span style="border-left: 1px solid #ddd; margin: 0 5px;"></span>
+                    <button class="toolbar-btn" onclick="format('insertUnorderedList')" title="Bullet List">• •</button>
+                    <button class="toolbar-btn" onclick="format('insertOrderedList')" title="Numbered List">1. 2.</button>
+                    <span style="border-left: 1px solid #ddd; margin: 0 5px;"></span>
+                    <button class="toolbar-btn" onclick="format('justifyLeft')" title="Align Left">≡</button>
+                    <button class="toolbar-btn" onclick="format('justifyCenter')" title="Center">≡</button>
+                    <button class="toolbar-btn" onclick="format('justifyRight')" title="Align Right">≡</button>
+                    <button class="toolbar-btn" onclick="format('justifyFull')" title="Justify">≡</button>
+                    <span style="border-left: 1px solid #ddd; margin: 0 5px;"></span>
+                    <button class="toolbar-btn" onclick="insertLineBreak()" title="Line Break">↵</button>
+                    <button class="toolbar-btn" onclick="format('removeFormat')" title="Clear Format">🧹</button>
+                    <span style="border-left: 1px solid #ddd; margin: 0 5px;"></span>
+                    <button class="toolbar-btn" onclick="format('undo')" title="Undo">↶</button>
+                    <button class="toolbar-btn" onclick="format('redo')" title="Redo">↷</button>
+                    <span style="border-left: 1px solid #ddd; margin: 0 5px;"></span>
+                    <button class="toolbar-btn" onclick="copyFormat()" title="Copy Format">📋 Format</button>
+                </div>
+                <div contenteditable="true" id="editor" spellcheck="true">
+                    <p>Start typing here...</p>
+                </div>
+                <div id="charCounter" class="char-counter">
+                    <span>Characters: <strong id="charCount">0</strong> / <span id="charLimit">3500</span></span>
+                    <span id="charWarning"></span>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div style="margin-top: 20px; text-align: center;">
+                <button class="btn" onclick="generateHTML()">Generate HTML</button>
+                <button class="btn btn-secondary" onclick="clearAll()">Clear Section</button>
+            </div>
+
+            <!-- Alert -->
+            <div id="alert" class="alert"></div>
+
+            <!-- Output -->
+            <div id="outputSection" class="output-section">
+                <h3>HTML Output (copy this):</h3>
+                <div id="htmlOutput" class="output-box"></div>
+                <button class="btn" onclick="copyToClipboard()">📋 Copy HTML</button>
+                <p style="margin-top: 10px; color: #666; font-size: 13px;">
+                    <strong>Character count includes HTML tags.</strong> The actual text may be shorter.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentAgency = 'nih';
+        let currentSection = 'personal';
+        let sectionData = {
+            personal: '',
+            contrib1: '',
+            contrib2: '',
+            contrib3: '',
+            contrib4: '',
+            contrib5: '',
+            nsf: ''
+        };
+
+        const editor = document.getElementById('editor');
+        const charCount = document.getElementById('charCount');
+        const charLimit = document.getElementById('charLimit');
+        const charWarning = document.getElementById('charWarning');
+        const charCounter = document.getElementById('charCounter');
+
+        // Agency toggle
+        document.getElementById('nih').addEventListener('change', () => switchAgency('nih'));
+        document.getElementById('nsf').addEventListener('change', () => switchAgency('nsf'));
+
+        function switchAgency(agency) {
+            currentAgency = agency;
+            
+            // Toggle info boxes
+            document.getElementById('nihInfo').classList.toggle('active', agency === 'nih');
+            document.getElementById('nsfInfo').classList.toggle('active', agency === 'nsf');
+            
+            // Toggle tabs
+            document.getElementById('nihTabs').classList.toggle('active', agency === 'nih');
+            document.getElementById('nsfSection').classList.toggle('active', agency === 'nsf');
+            
+            // Switch to first section
+            if (agency === 'nih') {
+                switchSection('personal');
+            } else {
+                switchSection('nsf');
+            }
+        }
+
+        function switchSection(section) {
+            // Save current content
+            saveCurrentSection();
+            
+            // Update current section
+            currentSection = section;
+            
+            // Update active tab
+            document.querySelectorAll('.section-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Load section content
+            editor.innerHTML = sectionData[section] || '<p>Start typing here...</p>';
+            
+            // Update limits
+            updateCharLimit();
+            updateCharCount();
+        }
+
+        function saveCurrentSection() {
+            sectionData[currentSection] = editor.innerHTML;
+        }
+
+        function updateCharLimit() {
+            let limit;
+            if (currentSection === 'personal') {
+                limit = 3500;
+            } else if (currentSection === 'nsf') {
+                limit = 3500;
+            } else {
+                limit = 2000; // Contributions
+            }
+            charLimit.textContent = limit;
+        }
+
+        // Format functions
+        function format(command) {
+            document.execCommand(command, false, null);
+            editor.focus();
+            updateToolbarState();
+        }
+
+        function insertLineBreak() {
+            document.execCommand('insertHTML', false, '<br>');
+            editor.focus();
+        }
+
+        // Copy format functionality
+        let copiedFormat = {
+            bold: false,
+            italic: false,
+            underline: false,
+            superscript: false,
+            subscript: false
+        };
+
+        function copyFormat() {
+            const selection = window.getSelection();
+            if (!selection.rangeCount) return;
+            
+            // Get current formatting
+            copiedFormat.bold = document.queryCommandState('bold');
+            copiedFormat.italic = document.queryCommandState('italic');
+            copiedFormat.underline = document.queryCommandState('underline');
+            copiedFormat.superscript = document.queryCommandState('superscript');
+            copiedFormat.subscript = document.queryCommandState('subscript');
+            
+            // Show feedback
+            const alert = document.getElementById('alert');
+            alert.className = 'alert alert-success show';
+            alert.textContent = '✓ Format copied! Select text and click "Copy Format" again to apply.';
+            setTimeout(() => alert.classList.remove('show'), 2000);
+            
+            // If we already have format copied, apply it
+            if (copiedFormat.bold || copiedFormat.italic || copiedFormat.underline || 
+                copiedFormat.superscript || copiedFormat.subscript) {
+                applyFormat();
+            }
+        }
+
+        function applyFormat() {
+            const selection = window.getSelection();
+            if (!selection.rangeCount) return;
+            
+            // Apply copied format
+            if (copiedFormat.bold && !document.queryCommandState('bold')) {
+                document.execCommand('bold', false, null);
+            }
+            if (copiedFormat.italic && !document.queryCommandState('italic')) {
+                document.execCommand('italic', false, null);
+            }
+            if (copiedFormat.underline && !document.queryCommandState('underline')) {
+                document.execCommand('underline', false, null);
+            }
+            if (copiedFormat.superscript && !document.queryCommandState('superscript')) {
+                document.execCommand('superscript', false, null);
+            }
+            if (copiedFormat.subscript && !document.queryCommandState('subscript')) {
+                document.execCommand('subscript', false, null);
+            }
+            
+            editor.focus();
+        }
+
+        // Update toolbar button states
+        function updateToolbarState() {
+            const commands = ['bold', 'italic', 'underline', 'superscript', 'subscript'];
+            const buttons = document.querySelectorAll('.toolbar-btn');
+            
+            buttons.forEach(btn => {
+                const onclick = btn.getAttribute('onclick');
+                if (!onclick) return;
+                
+                commands.forEach(cmd => {
+                    if (onclick.includes(`'${cmd}'`)) {
+                        if (document.queryCommandState(cmd)) {
+                            btn.classList.add('active');
+                        } else {
+                            btn.classList.remove('active');
+                        }
+                    }
+                });
+            });
+        }
+
+        // Update toolbar state on selection change
+        editor.addEventListener('mouseup', updateToolbarState);
+        editor.addEventListener('keyup', updateToolbarState);
+
+        function clearAll() {
+            if (confirm('Clear all text in this section?')) {
+                editor.innerHTML = '<p>Start typing here...</p>';
+                updateCharCount();
+            }
+        }
+
+        // Character counter
+        editor.addEventListener('input', updateCharCount);
+        editor.addEventListener('paste', () => setTimeout(updateCharCount, 10));
+
+        function updateCharCount() {
+            const html = editor.innerHTML;
+            const cleanText = cleanHTML(html);
+            const count = cleanText.length;
+            
+            charCount.textContent = count;
+            
+            const limit = parseInt(charLimit.textContent);
+            const warningThreshold = Math.floor(limit * 0.9);
+            
+            charCounter.classList.remove('warning', 'error');
+            
+            if (count > limit) {
+                charCounter.classList.add('error');
+                charWarning.textContent = `⚠️ Exceeds ${limit} character limit!`;
+            } else if (count > warningThreshold) {
+                charCounter.classList.add('warning');
+                charWarning.textContent = `⚠️ Approaching limit`;
+            } else {
+                charWarning.textContent = '';
+            }
+        }
+
+        // Clean HTML to minimal tags
+        function cleanHTML(html) {
+            // Remove empty paragraphs
+            html = html.replace(/<p>\s*<\/p>/g, '');
+            html = html.replace(/<p><br><\/p>/g, '');
+            
+            // Replace div tags with p
+            html = html.replace(/<div>/g, '<p>');
+            html = html.replace(/<\/div>/g, '</p>');
+            
+            // Remove font tags but keep content
+            html = html.replace(/<font[^>]*>/g, '');
+            html = html.replace(/<\/font>/g, '');
+            
+            // Remove span tags but keep content (unless they have alignment)
+            html = html.replace(/<span(?![^>]*text-align)[^>]*>/g, '');
+            html = html.replace(/<\/span>/g, '');
+            
+            // Preserve alignment by converting to paragraph styles
+            html = html.replace(/<p[^>]*style="[^"]*text-align:\s*center[^"]*"[^>]*>/g, '<p style="text-align:center">');
+            html = html.replace(/<p[^>]*style="[^"]*text-align:\s*right[^"]*"[^>]*>/g, '<p style="text-align:right">');
+            html = html.replace(/<p[^>]*style="[^"]*text-align:\s*justify[^"]*"[^>]*>/g, '<p style="text-align:justify">');
+            
+            // Remove other style attributes except text-align
+            html = html.replace(/\s*style="(?!text-align)[^"]*"/g, '');
+            
+            // Remove class and id attributes
+            html = html.replace(/\s*class="[^"]*"/g, '');
+            html = html.replace(/\s*id="[^"]*"/g, '');
+            
+            // Clean up multiple spaces
+            html = html.replace(/\s+/g, ' ');
+            
+            // Remove leading/trailing spaces in tags
+            html = html.replace(/>\s+</g, '><');
+            
+            // Remove consecutive breaks (more than 2)
+            html = html.replace(/(<br\s*\/?>\s*){3,}/g, '<br><br>');
+            
+            return html.trim();
+        }
+
+        // Generate HTML
+        function generateHTML() {
+            saveCurrentSection();
+            
+            const html = cleanHTML(editor.innerHTML);
+            const count = html.length;
+            const limit = parseInt(charLimit.textContent);
+            
+            document.getElementById('htmlOutput').textContent = html;
+            document.getElementById('outputSection').classList.add('active');
+            
+            const alert = document.getElementById('alert');
+            if (count > limit) {
+                alert.className = 'alert alert-warning show';
+                alert.textContent = `⚠️ Warning: ${count} characters exceeds ${limit} limit!`;
+            } else {
+                alert.className = 'alert alert-success show';
+                alert.textContent = `✓ Generated successfully! (${count} characters)`;
+            }
+            
+            // Scroll to output
+            document.getElementById('outputSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Copy to clipboard
+        function copyToClipboard() {
+            const html = document.getElementById('htmlOutput').textContent;
+            navigator.clipboard.writeText(html).then(() => {
+                const alert = document.getElementById('alert');
+                alert.className = 'alert alert-success show';
+                alert.textContent = '✓ Copied to clipboard!';
+                setTimeout(() => alert.classList.remove('show'), 2000);
+            });
+        }
+
+        // Initialize
+        updateCharLimit();
+        updateCharCount();
+    </script>
+</body>
+</html>
