@@ -309,10 +309,9 @@
                 <div id="nihInfo" class="info-box active">
                     <h4>NIH Biographical Sketch Supplement:</h4>
                     <ul>
-                        <li><strong>Personal Statement:</strong> training, expertise, environment, productivity, 3,500 character limit</li>
-                        <li><strong>Contributions to Science:</strong> 5 sections, background, findings, impact, role, only reference the 5 "other significant products", 2,000 chars each, </li>
+                        <li><strong>Personal Statement:</strong> Briefly describe why you are well-suited for your role(s) in this project. Relevant factors include: training, expertise, collaborative environment, aspects of the environment that contribute to your productivity. (3,500 character limit)</li>
+                        <li><strong>Contributions to Science:</strong> Briefly describe up to 5 significant contributions. For each contribution describe: (1) historical background that frames the scientific problem; (2) central findings; (3) influence on progress of science or application to health/technology; (4) your specific role. <strong>Important:</strong> Only reference the 5 "Other Significant Products" you listed in SciENcv - no other citations allowed. (2,000 chars each)</li>
                         <li><strong>Formatting:</strong> Basic HTML tags (b, i, u, sup, sub, lists, alignment)</li>
-                        <li><strong>Output:</strong> Clean, minimal HTML ready for SciENcv</li>
                     </ul>
                 </div>
 
@@ -366,8 +365,6 @@
                     <span style="border-left: 1px solid #ddd; margin: 0 5px;"></span>
                     <button class="toolbar-btn" onclick="format('undo')" title="Undo">↶</button>
                     <button class="toolbar-btn" onclick="format('redo')" title="Redo">↷</button>
-                    <span style="border-left: 1px solid #ddd; margin: 0 5px;"></span>
-                    //<button class="toolbar-btn" onclick="copyFormat()" title="Copy Format">📋 Format</button>
                 </div>
                 <div contenteditable="true" id="editor" spellcheck="true">
                     <p>Start typing here...</p>
@@ -380,7 +377,8 @@
 
             <!-- Buttons -->
             <div style="margin-top: 20px; text-align: center;">
-                <button class="btn" onclick="generateHTML()">Generate HTML</button>
+                <button class="btn" onclick="generateHTML()">Generate HTML (Current Section)</button>
+                <button class="btn" onclick="exportAllSections()" id="exportAllBtn">📦 Export All Sections</button>
                 <button class="btn btn-secondary" onclick="clearAll()">Clear Section</button>
             </div>
 
@@ -389,11 +387,14 @@
 
             <!-- Output -->
             <div id="outputSection" class="output-section">
-                <h3>HTML Output (copy this):</h3>
+                <h3>HTML Output:</h3>
+                <p style="color: #666; font-size: 13px; margin-bottom: 10px;">
+                    Copy this HTML and paste into SciENcv or your document editor
+                </p>
                 <div id="htmlOutput" class="output-box"></div>
-                <button class="btn" onclick="copyToClipboard()">📋 Copy HTML</button>
+                <button class="btn" onclick="copyToClipboard()">📋 Copy to Clipboard</button>
                 <p style="margin-top: 10px; color: #666; font-size: 13px;">
-                    <strong>Character count includes HTML tags.</strong> The actual text may be shorter.
+                    <strong>Note:</strong> Character count includes HTML tags. The displayed text may be shorter.
                 </p>
             </div>
         </div>
@@ -490,63 +491,6 @@
             editor.focus();
         }
 
-        // Copy format functionality
-        let copiedFormat = {
-            bold: false,
-            italic: false,
-            underline: false,
-            superscript: false,
-            subscript: false
-        };
-
-        function copyFormat() {
-            const selection = window.getSelection();
-            if (!selection.rangeCount) return;
-            
-            // Get current formatting
-            copiedFormat.bold = document.queryCommandState('bold');
-            copiedFormat.italic = document.queryCommandState('italic');
-            copiedFormat.underline = document.queryCommandState('underline');
-            copiedFormat.superscript = document.queryCommandState('superscript');
-            copiedFormat.subscript = document.queryCommandState('subscript');
-            
-            // Show feedback
-            const alert = document.getElementById('alert');
-            alert.className = 'alert alert-success show';
-            alert.textContent = '✓ Format copied! Select text and click "Copy Format" again to apply.';
-            setTimeout(() => alert.classList.remove('show'), 2000);
-            
-            // If we already have format copied, apply it
-            if (copiedFormat.bold || copiedFormat.italic || copiedFormat.underline || 
-                copiedFormat.superscript || copiedFormat.subscript) {
-                applyFormat();
-            }
-        }
-
-        function applyFormat() {
-            const selection = window.getSelection();
-            if (!selection.rangeCount) return;
-            
-            // Apply copied format
-            if (copiedFormat.bold && !document.queryCommandState('bold')) {
-                document.execCommand('bold', false, null);
-            }
-            if (copiedFormat.italic && !document.queryCommandState('italic')) {
-                document.execCommand('italic', false, null);
-            }
-            if (copiedFormat.underline && !document.queryCommandState('underline')) {
-                document.execCommand('underline', false, null);
-            }
-            if (copiedFormat.superscript && !document.queryCommandState('superscript')) {
-                document.execCommand('superscript', false, null);
-            }
-            if (copiedFormat.subscript && !document.queryCommandState('subscript')) {
-                document.execCommand('subscript', false, null);
-            }
-            
-            editor.focus();
-        }
-
         // Update toolbar button states
         function updateToolbarState() {
             const commands = ['bold', 'italic', 'underline', 'superscript', 'subscript'];
@@ -577,6 +521,81 @@
                 editor.innerHTML = '<p>Start typing here...</p>';
                 updateCharCount();
             }
+        }
+
+        // Export all sections function
+        function exportAllSections() {
+            saveCurrentSection();
+            
+            let exportText = '';
+            let totalChars = 0;
+            let hasContent = false;
+            
+            if (currentAgency === 'nih') {
+                // Export NIH sections
+                exportText += '='.repeat(60) + '\n';
+                exportText += 'NIH BIOGRAPHICAL SKETCH SUPPLEMENT - ALL SECTIONS\n';
+                exportText += '='.repeat(60) + '\n\n';
+                
+                // Personal Statement
+                if (sectionData.personal && sectionData.personal !== '<p>Start typing here...</p>') {
+                    hasContent = true;
+                    const personalHTML = cleanHTML(sectionData.personal);
+                    exportText += '--- PERSONAL STATEMENT (3,500 char limit) ---\n';
+                    exportText += `Characters: ${personalHTML.length}\n\n`;
+                    exportText += personalHTML + '\n\n';
+                    totalChars += personalHTML.length;
+                }
+                
+                // Contributions to Science
+                for (let i = 1; i <= 5; i++) {
+                    const key = `contrib${i}`;
+                    if (sectionData[key] && sectionData[key] !== '<p>Start typing here...</p>') {
+                        hasContent = true;
+                        const contribHTML = cleanHTML(sectionData[key]);
+                        exportText += `--- CONTRIBUTION TO SCIENCE ${i} (2,000 char limit) ---\n`;
+                        exportText += `Characters: ${contribHTML.length}\n\n`;
+                        exportText += contribHTML + '\n\n';
+                        totalChars += contribHTML.length;
+                    }
+                }
+            } else {
+                // Export NSF section
+                exportText += '='.repeat(60) + '\n';
+                exportText += 'NSF SYNERGISTIC ACTIVITIES\n';
+                exportText += '='.repeat(60) + '\n\n';
+                
+                if (sectionData.nsf && sectionData.nsf !== '<p>Start typing here...</p>') {
+                    hasContent = true;
+                    const nsfHTML = cleanHTML(sectionData.nsf);
+                    exportText += '--- SYNERGISTIC ACTIVITIES (1 page / ~3,500 char limit) ---\n';
+                    exportText += `Characters: ${nsfHTML.length}\n\n`;
+                    exportText += nsfHTML + '\n\n';
+                    totalChars += nsfHTML.length;
+                }
+            }
+            
+            if (!hasContent) {
+                const alert = document.getElementById('alert');
+                alert.className = 'alert alert-warning show';
+                alert.textContent = '⚠️ No content to export. Please add text to at least one section.';
+                return;
+            }
+            
+            exportText += '='.repeat(60) + '\n';
+            exportText += `TOTAL CHARACTERS (with HTML): ${totalChars}\n`;
+            exportText += '='.repeat(60) + '\n';
+            
+            // Show in output
+            document.getElementById('htmlOutput').textContent = exportText;
+            document.getElementById('outputSection').classList.add('active');
+            
+            const alert = document.getElementById('alert');
+            alert.className = 'alert alert-success show';
+            alert.textContent = `✓ Exported ${currentAgency.toUpperCase()} sections successfully! Total: ${totalChars} characters`;
+            
+            // Scroll to output
+            document.getElementById('outputSection').scrollIntoView({ behavior: 'smooth' });
         }
 
         // Character counter
