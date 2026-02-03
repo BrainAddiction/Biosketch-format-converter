@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Format Editor for Common Form NIH/NSF Biosketch</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 0;
+        }
+
+        .mode-btn {
+            padding: 12px 25px;
+            border: none;
+            background: none;
+            color: #666;
+            font-size: 1.1em;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .mode-btn:hover {
+            color: #667eea;
+        }
+
+        .mode-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            font-weight: 600;
+        }
+
+        .mode-content {
+            display: none;
+        }
+
+        .mode-content.active {
+            display: block;
+        }
+
+        .upload-zone {
+            border: 3px dashed #667eea;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9ff;
+        }
+
+        .upload-zone:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+        }
+
+        .upload-zone.drag-over {
+            border-color: #764ba2;
+            background: #e8ebff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+
+        .upload-zone h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .upload-zone p {
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .editor-section {
+            margin-top: 20px;
+        }
+
+        .toolbar {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            padding: 10px;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .toolbar-group {
+            display: flex;
+            gap: 5px;
+            padding-right: 10px;
+            border-right: 1px solid #ddd;
+        }
+
+        .toolbar-group:last-child {
+            border-right: none;
+        }
+
+        .toolbar-btn {
+            background: white;
+            border: 1px solid #ccc;
+            padding: 8px 12px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: all 0.2s;
+            color: #333;
+            min-width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toolbar-btn:hover {
+            background: #e8ebff;
+            border-color: #667eea;
+        }
+
+        .toolbar-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .toolbar-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .toolbar select {
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .editor-container {
+            border: 1px solid #ddd;
+            border-radius: 0 0 8px 8px;
+            min-height: 300px;
+            background: white;
+            position: relative;
+        }
+
+        #textEditor {
+            width: 100%;
+            min-height: 300px;
+            padding: 20px;
+            border: none;
+            outline: none;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+            overflow-y: auto;
+        }
+
+        #textEditor:focus {
+            outline: 2px solid #667eea;
+            outline-offset: -2px;
+        }
+
+        .character-counter {
+            background: #f8f9ff;
+            padding: 10px 15px;
+            border-top: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .character-counter.warning {
+            background: #fff3cd;
+            color: #856404;
+            border-top: 2px solid #ffc107;
+        }
+
+        .character-counter.error {
+            background: #f8d7da;
+            color: #721c24;
+            border-top: 2px solid #dc3545;
+        }
+
+        .char-count {
+            font-weight: 600;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.4);
+        }
+
+        .file-info {
+            background: #f0f2ff;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .file-info.show {
+            display: block;
+        }
+
+        .file-info p {
+            color: #333;
+            margin: 5px 0;
+        }
+
+        .options {
+            margin: 20px 0;
+        }
+
+        .options h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .option-group {
+            margin: 15px 0;
+        }
+
+        .option-group label {
+            display: flex;
+            align-items: center;
+            color: #555;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        .option-group label:hover {
+            background: #f8f9ff;
+        }
+
+        .option-group input[type="checkbox"] {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .preview {
+            margin-top: 20px;
+        }
+
+        .preview h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .preview-content {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .code-view {
+            background: #282c34;
+            color: #abb2bf;
+            padding: 20px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            display: none;
+        }
+
+        .status.show {
+            display: block;
+        }
+
+        .status.error {
+            background: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
+        }
+
+        .status.success {
+            background: #efe;
+            color: #3c3;
+            border: 1px solid #cfc;
+        }
+
+        .status.info {
+            background: #eef;
+            color: #33c;
+            border: 1px solid #ccf;
+        }
+
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffc107;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: #666;
+            font-size: 1em;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            color: #667eea;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .color-picker-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .color-picker {
+            width: 35px;
+            height: 35px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 2px;
+        }
+
+        .tooltip {
+            position: relative;
+        }
+
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            margin-bottom: 5px;
+            z-index: 1000;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .toolbar {
+                gap: 3px;
+            }
+            
+            .toolbar-btn {
+                padding: 6px 8px;
+                font-size: 12px;
+                min-width: 30px;
+                height: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📄 Format Editor for Common Form NIH/NSF Biosketch</h1>
+            <p>Upload a Word document or create formatted text for NIH/NSF biosketches</p>
+        </div>
+
+        <div class="main-card">
+            <div class="mode-selector">
+                <button class="mode-btn active" onclick="switchMode('upload')">
+                    📎 Upload Document
+                </button>
+                <button class="mode-btn" onclick="switchMode('editor')">
+                    ✍️ Text Editor
+                </button>
+            </div>
+
+            <!-- Upload Mode -->
+            <div id="uploadMode" class="mode-content active">
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-icon">📎</div>
+                    <h3>Drop your Word document here</h3>
+                    <p>or click to browse</p>
+                    <button class="btn" type="button" onclick="document.getElementById('fileInput').click()">
+                        Select File
+                    </button>
+                    <input type="file" id="fileInput" accept=".docx" />
+                </div>
+
+                <div class="file-info" id="fileInfo">
+                    <p><strong>File:</strong> <span id="fileName"></span></p>
+                    <p><strong>Size:</strong> <span id="fileSize"></span></p>
+                </div>
+
+                <div class="options">
+                    <h3>Conversion Options</h3>
+                    <div class="option-group">
+                        <label>
+                            <input type="checkbox" id="preserveFormatting" checked />
+                            Preserve basic formatting (bold, italic, underline)
+                        </label>
+                    </div>
+                    <div class="option-group">
+                        <label>
+                            <input type="checkbox" id="preserveHeadings" checked />
+                            Convert heading styles to HTML headings
+                        </label>
+                    </div>
+                    <div class="option-group">
+                        <label>
+                            <input type="checkbox" id="preserveLists" checked />
+                            Preserve lists and bullet points
+                        </label>
+                    </div>
+                    <div class="option-group">
+                        <label>
+                            <input type="checkbox" id="preserveLinks" checked />
+                            Preserve hyperlinks
+                        </label>
+                    </div>
+                    <div class="option-group">
+                        <label>
+                            <input type="checkbox" id="removeFontStyles" />
+                            Remove font styles (font-family, font-size, color)
+                        </label>
+                    </div>
+                    <div class="option-group">
+                        <label>
+                            <input type="checkbox" id="cleanOutput" checked />
+                            Clean HTML output (remove unnecessary tags)
+                        </label>
+                    </div>
+                </div>
+
+                <button class="btn" id="convertBtn" onclick="convertDocument()" disabled>
+                    Convert to HTML
+                </button>
+            </div>
+
+            <!-- Editor Mode -->
+            <div id="editorMode" class="mode-content">
+                <div class="editor-section">
+                    <div class="toolbar">
+                        <div class="toolbar-group">
+                            <select id="formatBlock" onchange="formatDoc('formatBlock', this.value); this.selectedIndex=0;">
+                                <option selected>- Format -</option>
+                                <option value="h1">Heading 1</option>
+                                <option value="h2">Heading 2</option>
+                                <option value="h3">Heading 3</option>
+                                <option value="h4">Heading 4</option>
+                                <option value="h5">Heading 5</option>
+                                <option value="h6">Heading 6</option>
+                                <option value="p">Paragraph</option>
+                            </select>
+                        </div>
+                        
+                        <div class="toolbar-group">
+                            <button class="toolbar-btn tooltip" data-tooltip="Bold" onclick="formatDoc('bold')">
+                                <strong>B</strong>
+                            </button>
+                            <button class="toolbar-btn tooltip" data-tooltip="Italic" onclick="formatDoc('italic')">
+                                <em>I</em>
+                            </button>
+                            <button class="toolbar-btn tooltip" data-tooltip="Underline" onclick="formatDoc('underline')">
+                                <u>U</u>
+                            </button>
+                            <button class="toolbar-btn tooltip" data-tooltip="Strikethrough" onclick="formatDoc('strikeThrough')">
+                                <s>S</s>
+                            </button>
+                        </div>
+
+                        <div class="toolbar-group">
+                            <button class="toolbar-btn tooltip" data-tooltip="Superscript" onclick="formatDoc('superscript')">
+                                X<sup>2</sup>
+                            </button>
+                            <button class="toolbar-btn tooltip" data-tooltip="Subscript" onclick="formatDoc('subscript')">
+                                X<sub>2</sub>
+                            </button>
+                        </div>
+
+                        <div class="toolbar-group">
+                            <button class="toolbar-btn tooltip" data-tooltip="Align Left" onclick="formatDoc('justifyLeft')">
+                                ☰
+                            </button>
+                            <button class="toolbar-btn tooltip" data-tooltip="Align Center" onclick="formatDoc('justifyCenter')">
+                                ☰
+                            </button>
+                            <button class="toolbar-btn tooltip" data-tooltip="Align Right" onclick="formatDoc('justifyRight')">
+                                ☰
+                            </button>
+                            <button class="toolbar-btn tooltip" data-tooltip="Justify" onclick="formatDoc('justifyFull')">
+                                ☰
+                            </button>
+                        </div>
+
+                        <div class="toolbar-group">
+                            <button class="toolbar-btn tooltip" data-tooltip="Ordered List" onclick="formatDoc('insertOrderedList')">
+                                1. 2. 3.
+                            </button>
+                            <button class="toolbar-btn tooltip" data-tooltip="Unordered List" onclick="formatDoc('insertUnorderedList')">
+                                • • •
+                            </button>
+                        </div>
+
+                        <div class="toolbar-group">
+                            <div class="color-picker-wrapper tooltip" data-tooltip="Text Color">
+                                <input type="color" id="textColor" class="color-picker" onchange="formatDoc('foreColor', this.value)" value="#000000">
+                            </div>
+                            <div class="color-picker-wrapper tooltip" data-tooltip="Background Color">
+                                <input type="color" id="bgColor" class="color-picker" onchange="formatDoc('hiliteColor', this.value)" value="#ffff00">
+                            </div>
+                        </div>
+
+                        <div class="toolbar-group">
+                            <button class="toolbar-btn tooltip" data-tooltip="Insert Link" onclick="insertLink()">
+                                🔗
+                            </button>
+                            <button class="toolbar-btn tooltip" data-tooltip="Remove Link" onclick="formatDoc('unlink')">
+                                🚫🔗
+                            </button>
+                        </div>
+
+                        <div class="toolbar-group">
+                            <button class="toolbar-btn tooltip" data-tooltip="Insert Line Break" onclick="insertLineBreak()">
+                                ↵
+                            </button>
+                            <button class="toolbar-btn tooltip" data-tooltip="Insert Horizontal Rule" onclick="formatDoc('insertHorizontalRule')">
+                                ―
+                            </button>
+                        </div>
+
+                        <div class="toolbar-group">
+                            <button class="toolbar-btn tooltip" data-tooltip="Undo" onclick="formatDoc('undo')">
+                                ↶
+                            </button>
+                            <button class="toolbar-btn tooltip" data-tooltip="Redo" onclick="formatDoc('redo')">
+                                ↷
+                            </button>
+                        </div>
+
+                        <div class="toolbar-group">
+                            <button class="toolbar-btn tooltip" data-tooltip="Clear Formatting" onclick="clearFormatting()">
+                                🧹
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="editor-container">
+                        <div id="textEditor" contenteditable="true" spellcheck="true">
+                            <p>Start typing or paste your formatted text here...</p>
+                        </div>
+                        <div class="character-counter" id="charCounter">
+                            <span>Character count (with HTML tags): <span class="char-count" id="charCount">0</span></span>
+                            <span id="charWarning"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-buttons" style="margin-top: 20px;">
+                    <button class="btn" onclick="convertEditorToHTML()">
+                        Convert to HTML
+                    </button>
+                    <button class="btn btn-secondary" onclick="clearEditor()">
+                        Clear Editor
+                    </button>
+                </div>
+
+                <div class="options" style="margin-top: 20px;">
+                    <h3>HTML Output Options</h3>
+                    <div class="option-group">
+                        <label>
+                            <input type="checkbox" id="removeFontStylesEditor" />
+                            Remove font styles from HTML (font-family, font-size, color)
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status" id="status"></div>
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Converting document...</p>
+            </div>
+        </div>
+
+        <div class="main-card" id="resultsCard" style="display: none;">
+            <h2 style="color: #333; margin-bottom: 20px;">Conversion Results</h2>
+            
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('preview')">Preview</button>
+                <button class="tab" onclick="switchTab('html')">HTML Code</button>
+            </div>
+
+            <div id="previewTab" class="tab-content active">
+                <div class="preview-content" id="previewContent"></div>
+            </div>
+
+            <div id="htmlTab" class="tab-content">
+                <div class="code-view" id="htmlCode"></div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn" onclick="copyHTML()">Copy HTML</button>
+                <button class="btn" onclick="downloadHTML()">Download HTML</button>
+                <button class="btn btn-secondary" onclick="reset()">Convert Another</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <script>
+        let convertedHTML = '';
+        let originalFileName = 'converted';
+        let currentMode = 'upload';
+
+        // Character counter for editor
+        const textEditor = document.getElementById('textEditor');
+        const charCounter = document.getElementById('charCounter');
+        const charCount = document.getElementById('charCount');
+        const charWarning = document.getElementById('charWarning');
+
+        function updateCharacterCount() {
+            const html = textEditor.innerHTML;
+            const count = html.length;
+            charCount.textContent = count;
+
+            // Reset classes
+            charCounter.classList.remove('warning', 'error');
+            
+            if (count > 2000) {
+                charCounter.classList.add('error');
+                charWarning.textContent = '⚠️ Exceeds 2000 character limit for NIH/NSF biosketch!';
+                charWarning.style.color = '#721c24';
+            } else if (count > 1800) {
+                charCounter.classList.add('warning');
+                charWarning.textContent = '⚠️ Approaching 2000 character limit';
+                charWarning.style.color = '#856404';
+            } else {
+                charWarning.textContent = '';
+            }
+        }
+
+        // Update character count on input
+        textEditor.addEventListener('input', updateCharacterCount);
+        textEditor.addEventListener('paste', () => setTimeout(updateCharacterCount, 10));
+
+        // Initialize character count
+        updateCharacterCount();
+
+        // Mode switching
+        function switchMode(mode) {
+            currentMode = mode;
+            
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            document.getElementById('uploadMode').classList.remove('active');
+            document.getElementById('editorMode').classList.remove('active');
+            
+            if (mode === 'upload') {
+                document.getElementById('uploadMode').classList.add('active');
+            } else {
+                document.getElementById('editorMode').classList.add('active');
+            }
+
+            hideStatus();
+            document.getElementById('resultsCard').style.display = 'none';
+        }
+
+        // File upload handling
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const convertBtn = document.getElementById('convertBtn');
+
+        uploadZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('drag-over');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('drag-over');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('drag-over');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.name.endsWith('.docx')) {
+                showStatus('Please select a .docx file', 'error');
+                return;
+            }
+
+            originalFileName = file.name.replace('.docx', '');
+            
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = formatFileSize(file.size);
+            fileInfo.classList.add('show');
+            convertBtn.disabled = false;
+            hideStatus();
+
+            window.selectedFile = file;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+
+        // Text editor functions
+        function formatDoc(cmd, value = null) {
+            document.execCommand(cmd, false, value);
+            document.getElementById('textEditor').focus();
+        }
+
+        function insertLink() {
+            const url = prompt('Enter URL:');
+            if (url) {
+                formatDoc('createLink', url);
+            }
+        }
+
+        function insertLineBreak() {
+            formatDoc('insertHTML', '<br>');
+        }
+
+        function clearFormatting() {
+            const selection = window.getSelection();
+            if (selection.rangeCount > 0) {
+                formatDoc('removeFormat');
+            }
+        }
+
+        function clearEditor() {
+            if (confirm('Are you sure you want to clear the editor?')) {
+                document.getElementById('textEditor').innerHTML = '<p>Start typing or paste your formatted text here...</p>';
+                updateCharacterCount();
+            }
+        }
+
+        function convertEditorToHTML() {
+            const editor = document.getElementById('textEditor');
+            let html = editor.innerHTML;
+            
+            // Check character count
+            if (html.length > 2000) {
+                showStatus('Warning: Content exceeds 2000 characters (' + html.length + ' chars). This may not be suitable for NIH/NSF biosketch requirements.', 'warning');
+            }
+            
+            html = cleanHTML(html);
+            
+            if (document.getElementById('removeFontStylesEditor').checked) {
+                html = removeFontStyling(html);
+            }
+            
+            convertedHTML = html;
+            originalFileName = 'biosketch-content';
+
+            document.getElementById('previewContent').innerHTML = html;
+            document.getElementById('htmlCode').textContent = formatHTML(html);
+            
+            document.getElementById('resultsCard').style.display = 'block';
+            document.getElementById('resultsCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            
+            if (html.length <= 2000) {
+                showStatus('Text converted to HTML successfully! (' + html.length + ' characters)', 'success');
+            }
+        }
+
+        // Document conversion
+        async function convertDocument() {
+            if (!window.selectedFile) return;
+
+            const loading = document.getElementById('loading');
+            const resultsCard = document.getElementById('resultsCard');
+            
+            loading.classList.add('show');
+            resultsCard.style.display = 'none';
+            hideStatus();
+
+            try {
+                const arrayBuffer = await window.selectedFile.arrayBuffer();
+                
+                const options = {
+                    styleMap: buildStyleMap()
+                };
+
+                const result = await mammoth.convertToHtml({arrayBuffer}, options);
+                
+                let html = result.value;
+
+                if (document.getElementById('cleanOutput').checked) {
+                    html = cleanHTML(html);
+                }
+
+                if (document.getElementById('removeFontStyles').checked) {
+                    html = removeFontStyling(html);
+                }
+
+                convertedHTML = html;
+
+                document.getElementById('previewContent').innerHTML = html;
+                document.getElementById('htmlCode').textContent = formatHTML(html);
+                
+                loading.classList.remove('show');
+                resultsCard.style.display = 'block';
+                resultsCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                // Check character count
+                if (html.length > 2000) {
+                    showStatus('Warning: Converted HTML is ' + html.length + ' characters (exceeds 2000 character NIH/NSF biosketch limit)', 'warning');
+                } else {
+                    showStatus('Document converted successfully! (' + html.length + ' characters)', 'success');
+                }
+
+                if (result.messages.length > 0) {
+                    console.log('Conversion messages:', result.messages);
+                }
+
+            } catch (error) {
+                loading.classList.remove('show');
+                showStatus('Error converting document: ' + error.message, 'error');
+                console.error(error);
+            }
+        }
+
+        function buildStyleMap() {
+            const preserveFormatting = document.getElementById('preserveFormatting').checked;
+            const preserveHeadings = document.getElementById('preserveHeadings').checked;
+
+            let styleMap = [];
+
+            if (preserveHeadings) {
+                styleMap.push(
+                    "p[style-name='Heading 1'] => h1:fresh",
+                    "p[style-name='Heading 2'] => h2:fresh",
+                    "p[style-name='Heading 3'] => h3:fresh",
+                    "p[style-name='Heading 4'] => h4:fresh",
+                    "p[style-name='Heading 5'] => h5:fresh",
+                    "p[style-name='Heading 6'] => h6:fresh",
+                    "p[style-name='Title'] => h1:fresh",
+                    "p[style-name='Subtitle'] => h2:fresh"
+                );
+            }
+
+            if (!preserveFormatting) {
+                styleMap.push(
+                    "b => ",
+                    "i => ",
+                    "u => ",
+                    "strong => ",
+                    "em => "
+                );
+            }
+
+            return styleMap.join("\n");
+        }
+
+        function cleanHTML(html) {
+            html = html.replace(/<p>\s*<\/p>/g, '');
+            html = html.replace(/<p><br><\/p>/g, '');
+            html = html.replace(/<span>(.*?)<\/span>/g, '$1');
+            html = html.replace(/(<br\s*\/?>){3,}/g, '<br><br>');
+            html = html.replace(/style="[^"]*mso-[^"]*"/g, '');
+            html = html.replace(/\s*style=""\s*/g, ' ');
+            html = html.replace(/\s+/g, ' ');
+            html = html.replace(/>\s+</g, '><');
+            
+            return html.trim();
+        }
+
+        function removeFontStyling(html) {
+            html = html.replace(/font-family:[^;]+;?/gi, '');
+            html = html.replace(/font-size:[^;]+;?/gi, '');
+            html = html.replace(/color:[^;]+;?/gi, '');
+            html = html.replace(/background-color:[^;]+;?/gi, '');
+            html = html.replace(/background:[^;]+;?/gi, '');
+            html = html.replace(/<font[^>]*>/gi, '');
+            html = html.replace(/<\/font>/gi, '');
+            
+            html = html.replace(/<span\s+style="[^"]*">/gi, function(match) {
+                let styleContent = match.match(/style="([^"]*)"/);
+                if (styleContent && styleContent[1]) {
+                    let cleanStyle = styleContent[1]
+                        .replace(/font-family:[^;]+;?/gi, '')
+                        .replace(/font-size:[^;]+;?/gi, '')
+                        .replace(/color:[^;]+;?/gi, '')
+                        .replace(/background-color:[^;]+;?/gi, '')
+                        .replace(/background:[^;]+;?/gi, '')
+                        .trim();
+                    
+                    if (!cleanStyle || cleanStyle === ';') {
+                        return '';
+                    } else {
+                        return '<span style="' + cleanStyle + '">';
+                    }
+                }
+                return match;
+            });
+            
+            let openSpans = (html.match(/<span/gi) || []).length;
+            let closeSpans = (html.match(/<\/span>/gi) || []).length;
+            if (closeSpans > openSpans) {
+                let diff = closeSpans - openSpans;
+                for (let i = 0; i < diff; i++) {
+                    html = html.replace(/<\/span>/, '');
+                }
+            }
+            
+            html = html.replace(/\s*style=""\s*/g, ' ');
+            html = html.replace(/\s*style=";*"\s*/g, ' ');
+            
+            return html;
+        }
+
+        function formatHTML(html) {
+            let formatted = html;
+            formatted = formatted.replace(/></g, '>\n<');
+            
+            let lines = formatted.split('\n');
+            let indent = 0;
+            let result = [];
+            
+            lines.forEach(line => {
+                line = line.trim();
+                if (!line) return;
+                
+                if (line.startsWith('</')) {
+                    indent = Math.max(0, indent - 2);
+                }
+                
+                result.push(' '.repeat(indent) + line);
+                
+                if (line.startsWith('<') && !line.startsWith('</') && !line.endsWith('/>') && 
+                    !line.includes('</') && !line.match(/<(br|hr|img|input|meta|link)/i)) {
+                    indent += 2;
+                }
+            });
+            
+            return result.join('\n');
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName + 'Tab').classList.add('active');
+        }
+
+        function copyHTML() {
+            navigator.clipboard.writeText(convertedHTML).then(() => {
+                showStatus('HTML copied to clipboard!', 'success');
+            }).catch(err => {
+                showStatus('Failed to copy: ' + err.message, 'error');
+            });
+        }
+
+        function downloadHTML() {
+            const blob = new Blob([convertedHTML], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = originalFileName + '.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showStatus('HTML file downloaded!', 'success');
+        }
+
+        function reset() {
+            window.selectedFile = null;
+            convertedHTML = '';
+            fileInput.value = '';
+            fileInfo.classList.remove('show');
+            document.getElementById('resultsCard').style.display = 'none';
+            convertBtn.disabled = true;
+            hideStatus();
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status show ' + type;
+        }
+
+        function hideStatus() {
+            document.getElementById('status').classList.remove('show');
+        }
+
+        // Update toolbar button states
+        document.getElementById('textEditor').addEventListener('mouseup', updateToolbar);
+        document.getElementById('textEditor').addEventListener('keyup', updateToolbar);
+
+        function updateToolbar() {
+            const commands = ['bold', 'italic', 'underline', 'strikeThrough', 'subscript', 'superscript'];
+            commands.forEach(cmd => {
+                const isActive = document.queryCommandState(cmd);
+                const btns = document.querySelectorAll(`.toolbar-btn[onclick*="${cmd}"]`);
+                btns.forEach(btn => {
+                    if (isActive) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+            });
+        }
+    </script>
+</body>
+</html>
